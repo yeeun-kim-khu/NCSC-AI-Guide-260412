@@ -13,3 +13,4 @@ audio-recorder-streamlit
 opentelemetry-api==1.21.0
 opentelemetry-sdk==1.21.0
 opentelemetry-exporter-otlp-proto-grpc==1.21.0
+protobuf==4.25.3
