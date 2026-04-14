@@ -10,3 +10,6 @@ chromadb==0.4.24
 graphviz>=0.20.1
 langchain-chroma==0.1.1
 audio-recorder-streamlit
+opentelemetry-api==1.21.0
+opentelemetry-sdk==1.21.0
+opentelemetry-exporter-otlp-proto-grpc==1.21.0
