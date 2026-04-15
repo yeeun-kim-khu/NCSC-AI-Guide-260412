@@ -57,36 +57,59 @@ ZONE_INFO = {
 # ============================================================================
 
 def get_zone_exhibits_from_rag(zone_name, vector_db):
-    """RAG에서 해당 놀이터의 전시물 정보 가져오기"""
+    """RAG DB: zone_name(='AI/Thinking/Action/Explore/Observe/Light') -> list of exhibits"""
     try:
-        try:
-            docs = vector_db.similarity_search(
-                zone_name,
-                k=50,
-                filter={"category": zone_name}
-            )
-        except:
-            docs = vector_db.similarity_search(zone_name, k=50)
+        # zone_name based search terms
+        search_terms = []
+        zone_mapping = {
+            "AI": "AI",
+            "Thinking": "AI", 
+            "Action": "Action",
+            "Explore": "Explore",
+            "Observe": "Observe",
+            "Light": "Light"
+        }
         
+        mapped_zone = zone_mapping.get(zone_name, zone_name)
+        search_terms.extend([mapped_zone, zone_name])
+        
+        # Search with multiple terms
+        all_docs = []
+        for term in search_terms:
+            try:
+                docs = vector_db.similarity_search(term, k=30)
+                all_docs.extend(docs)
+            except Exception as e:
+                print(f"Search error for term '{term}': {e}")
+                continue
+        
+        # Remove duplicates and filter by zone relevance
         exhibits = []
-        seen_titles = set()
+        seen_content = set()
         
-        for doc in docs:
-            category = doc.metadata.get("category", "")
-            title = doc.metadata.get("title", "")
+        for doc in all_docs:
             content = doc.page_content
+            category = doc.metadata.get("category", "")
             
-            if zone_name in category and title not in seen_titles:
+            # Check if content is relevant to the zone
+            is_relevant = (
+                mapped_zone in content or 
+                zone_name in content or 
+                mapped_zone in category or
+                zone_name in category
+            )
+            
+            if is_relevant and content not in seen_content:
                 exhibits.append({
                     "content": content,
                     "metadata": doc.metadata
                 })
-                seen_titles.add(title)
+                seen_content.add(content)
         
-        print(f"최종 검색 결과: {zone_name}에서 {len(exhibits)}개 전시물 발견")
+        print(f"RAG search result: {len(exhibits)} exhibits found in {zone_name}")
         return exhibits
     except Exception as e:
-        print(f"RAG 검색 오류: {e}")
+        print(f"RAG search error: {e}")
         return []
 
 def extract_principles_from_exhibits(exhibits, llm):

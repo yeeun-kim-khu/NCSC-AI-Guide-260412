@@ -10,26 +10,44 @@ client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 def speech_to_text(audio_bytes):
     """Convert speech to text using OpenAI Whisper"""
     try:
+        # Check if audio_bytes is valid
+        if not audio_bytes or len(audio_bytes) < 100:
+            print("Audio bytes too small or empty")
+            return None
+        
         # Save audio bytes to temporary file
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
             temp_audio.write(audio_bytes)
             temp_audio_path = temp_audio.name
         
-        # Transcribe using Whisper
+        # Transcribe using Whisper with more flexible settings
         with open(temp_audio_path, "rb") as audio_file:
             transcript = client.audio.transcriptions.create(
                 model="whisper-1",
                 file=audio_file,
-                language="ko"  # Korean language
+                language="ko",  # Korean language
+                response_format="text",
+                temperature=0.0  # More deterministic
             )
         
         # Clean up temp file
         os.unlink(temp_audio_path)
         
-        return transcript.text
+        # Check if transcript is valid
+        if transcript and len(transcript.strip()) > 0:
+            return transcript.strip()
+        else:
+            print("Empty transcript received")
+            return None
     
     except Exception as e:
         print(f"Speech-to-text error: {e}")
+        # Clean up temp file if it exists
+        try:
+            if 'temp_audio_path' in locals():
+                os.unlink(temp_audio_path)
+        except:
+            pass
         return None
 
 def text_to_speech(text, language="ko"):
