@@ -59,18 +59,26 @@ ZONE_INFO = {
 def get_zone_exhibits_from_rag(zone_name, vector_db):
     """RAG DB: zone_name(='AI/Thinking/Action/Explore/Observe/Light') -> list of exhibits"""
     try:
-        # zone_name based search terms
+        # zone_name based search terms - match actual CSV data
         search_terms = []
-        zone_mapping = {
-            "AI": "AI",
-            "Thinking": "AI", 
-            "Action": "Action",
-            "Explore": "Explore",
-            "Observe": "Observe",
-            "Light": "Light"
+        
+        # Map zone names to actual CSV categories
+        csv_zone_mapping = {
+            "AI": "AI놀이터",
+            "Action": "행동놀이터",
+            "Explore": "탐구놀이터",
+            "Observe": "관찰놀이터",
+            "Thinking": "",  # 데이터 없음
+            "Light": ""      # 데이터 없음
         }
         
-        mapped_zone = zone_mapping.get(zone_name, zone_name)
+        mapped_zone = csv_zone_mapping.get(zone_name, zone_name)
+        
+        # Skip zones without data
+        if not mapped_zone:
+            print(f"No data available for zone: {zone_name}")
+            return []
+            
         search_terms.extend([mapped_zone, zone_name])
         
         # Search with multiple terms
