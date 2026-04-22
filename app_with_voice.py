@@ -707,7 +707,10 @@ def main():
         )
     
     # Chat input at page bottom (outside tabs for stable positioning)
-    typed_input = st.chat_input(ui_text.get(language_mode, ui_text["한국어"])["chat_placeholder"])
+    typed_input = st.chat_input(
+        ui_text.get(language_mode, ui_text["한국어"])["chat_placeholder"],
+        key="main_chat_input"
+    )
     if typed_input and not st.session_state.get("pending_user_input"):
         st.session_state["pending_user_input"] = typed_input
         st.rerun()
