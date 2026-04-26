@@ -1,4 +1,4 @@
-# learning.py - 사후 학습 시스템 통합
+# learning.py - 또만나 놀이터 시스템 통합
 # post_visit_learning.py + audiobook_generator.py + visualization.py 통합
 
 import streamlit as st
@@ -6,7 +6,10 @@ from langchain_openai import ChatOpenAI
 from openai import OpenAI
 import os
 import random
-from core import initialize_vector_db
+import re
+import requests
+from collections import Counter
+from core import initialize_vector_db, load_zone_rows_from_csv
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
@@ -59,16 +62,34 @@ ZONE_INFO = {
 @st.cache_data(show_spinner=False)
 def _preload_all_zone_csv_rows():
     """모든 놀이터의 CSV 데이터를 미리 로드"""
+    import os
+    import glob
+    
+    # 디버깅: 현재 디렉토리와 data 폴더 확인
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.join(current_dir, "data")
+    
+    st.write(f"🔍 **디버깅 정보:**")
+    st.write(f"- 현재 디렉토리: `{current_dir}`")
+    st.write(f"- Data 폴더: `{data_dir}`")
+    st.write(f"- Data 폴더 존재: {os.path.exists(data_dir)}")
+    
+    if os.path.exists(data_dir):
+        csv_files = glob.glob(os.path.join(data_dir, "*.csv"))
+        st.write(f"- 발견된 CSV 파일 수: {len(csv_files)}")
+        st.write(f"- CSV 파일 목록: {[os.path.basename(f) for f in csv_files[:5]]}")
+    
     data = {}
     for zone, info in ZONE_INFO.items():
         if info.get("has_data"):
             try:
                 rows = load_zone_rows_from_csv(zone)
                 data[zone] = rows
-                print(f"✅ Loaded {len(rows)} rows for {zone}")
+                st.write(f"✅ **{zone}**: {len(rows)}개 전시물 로드 성공")
             except Exception as e:
-                print(f"❌ Failed to load {zone}: {e}")
+                st.error(f"❌ **{zone}** 로드 실패: {str(e)}")
                 data[zone] = []
+    
     return data
 
 # ============================================================================
