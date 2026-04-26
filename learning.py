@@ -53,6 +53,25 @@ ZONE_INFO = {
 }
 
 # ============================================================================
+# CSV 데이터 로딩
+# ============================================================================
+
+@st.cache_data(show_spinner=False)
+def _preload_all_zone_csv_rows():
+    """모든 놀이터의 CSV 데이터를 미리 로드"""
+    data = {}
+    for zone, info in ZONE_INFO.items():
+        if info.get("has_data"):
+            try:
+                rows = load_zone_rows_from_csv(zone)
+                data[zone] = rows
+                print(f"✅ Loaded {len(rows)} rows for {zone}")
+            except Exception as e:
+                print(f"❌ Failed to load {zone}: {e}")
+                data[zone] = []
+    return data
+
+# ============================================================================
 # RAG 검색 및 원리 추출
 # ============================================================================
 
@@ -471,6 +490,9 @@ def render_post_visit_learning(
     st.title(text["title"])
     st.markdown(text["subtitle"])
     
+    # CSV 데이터 미리 로드
+    all_zone_rows = _preload_all_zone_csv_rows()
+    
     learning_tab1, learning_tab2 = st.tabs([text["tab1"], text["tab2"]])
     
     with learning_tab1:
@@ -515,7 +537,20 @@ def render_post_visit_learning(
                 st.markdown(f"## 🎯 {_display_zone_name(zone)}")
                 
                 with st.spinner(text["generating"]):
-                    exhibits = get_zone_exhibits_from_rag(zone, vector_db)
+                    # CSV에서 직접 데이터 로드
+                    zone_rows = all_zone_rows.get(zone, [])
+                    
+                    # CSV 데이터를 exhibits 형식으로 변환
+                    exhibits = []
+                    for row in zone_rows:
+                        exhibits.append({
+                            "title": row.get("title", ""),
+                            "content": row.get("content", ""),
+                            "detail": row.get("detail", ""),
+                            "category": row.get("category", "")
+                        })
+                    
+                    print(f"📊 Loaded {len(exhibits)} exhibits for {zone} from CSV")
                     
                     if exhibits:
                         principles, principles_text = extract_principles_from_exhibits(exhibits, llm)
